@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     # test()
     print("small lattice")
-    benchmark(4**4*4)
+    benchmark(4**4*8)
     print("large lattice")
-    benchmark(8**4)
+    benchmark(8**4*8)
 
