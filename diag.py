@@ -33,10 +33,15 @@ def _torch_diagonalize_su3(U):
         3*a*z**2 - 3*q*z**2 + 2*z**3
     term4 = (term3 + torch.sqrt(4*(term2)**3 + (term3)**2))**(1/3)
     term5 = (2**(1/3)*(term2))/(3.*term4)
-    term6 = (term2*(1 + sqrt3*1j))/(term4*3.*2**(2/3))
-    term7 = (term4*(1 - sqrt3*1j))/(6.*2**(1/3))
-    term8 = (term2*(1 - sqrt3*1j))/(term4*3.*2**(2/3))
-    term9 = (term4*(1 + sqrt3*1j))/(6.*2**(1/3))
+    
+    denom68 = term4*3.*2**(2/3)
+    term6 = (term2*(1 + sqrt3*1j))/(denom68)
+    term8 = (term2*(1 - sqrt3*1j))/(denom68)
+    
+    denom79 = 6.*2**(1/3)
+    term7 = (term4*(1 - sqrt3*1j))/(denom79)
+    term9 = (term4*(1 + sqrt3*1j))/(denom79)
+    
     term10 = -(r*x) + p*z
     term11 = -(q*x) + p*y
     term12 = r*x - p*z
@@ -46,22 +51,33 @@ def _torch_diagonalize_su3(U):
     eigval3 = term1 + term8 - term9
     eigvals = torch.stack([eigval1, eigval2, eigval3], dim=1)
 
-    eigvec1 = torch.stack([
-        (-z + eigval1)/x + (y*(term10 - p*(eigval1)))/(x*(term11 + x*(eigval1))),
-        (term12 + p*(eigval1))/(term11 + x*(eigval1)),
-        torch.ones_like(a)], dim=1).unsqueeze(2)
-    eigvec2 = torch.stack([
-        (-z + eigval2)/x + (y*(term10 - p*(eigval2)))/(x*(term11 + x*(eigval2))),
-        (term12 + p*(eigval2))/(term11 + x*(eigval2)),
-        torch.ones_like(a)], dim=1).unsqueeze(2)
-    eigvec3 = torch.stack([
-        (-z + eigval3)/x + (y*(term10 - p*(eigval3)))/(x*(term11 + x*(eigval3))),
-        (term12 + p*(eigval3))/(term11 + x*(eigval3)),
-        torch.ones_like(a)], dim=1).unsqueeze(2)
-    eigvec1, eigvec2, eigvec3 = (
-        eigvec1 / torch.linalg.norm(eigvec1, dim=1).unsqueeze(1),
-        eigvec2 / torch.linalg.norm(eigvec2, dim=1).unsqueeze(1),
-        eigvec3 / torch.linalg.norm(eigvec3, dim=1).unsqueeze(1))
-    eigvecs = torch.cat([eigvec1, eigvec2, eigvec3], dim=2)
+    # EIGENVECTORS
+    #eigvec1 = torch.stack([
+    #    (-z + eigval1)/x + (y*(term10 - p*(eigval1)))/(x*(term11 + x*(eigval1))),
+    #    (term12 + p*(eigval1))/(term11 + x*(eigval1)),
+    #    torch.ones_like(a)], dim=1).unsqueeze(2)
+    #eigvec2 = torch.stack([
+    #    (-z + eigval2)/x + (y*(term10 - p*(eigval2)))/(x*(term11 + x*(eigval2))),
+    #    (term12 + p*(eigval2))/(term11 + x*(eigval2)),
+    #    torch.ones_like(a)], dim=1).unsqueeze(2)
+    #eigvec3 = torch.stack([
+    #    (-z + eigval3)/x + (y*(term10 - p*(eigval3)))/(x*(term11 + x*(eigval3))),
+    #    (term12 + p*(eigval3))/(term11 + x*(eigval3)),
+    #    torch.ones_like(a)], dim=1).unsqueeze(2)
+
+    # manual fuse
+    eigvecs = torch.stack([
+        (-z.unsqueeze(1) + eigvals)/x.unsqueeze(1) + (y.unsqueeze(1)*(term10.unsqueeze(1) - p.unsqueeze(1)*(eigvals)))/(x.unsqueeze(1)*(term11.unsqueeze(1) + x.unsqueeze(1)*(eigvals))),
+        (term12.unsqueeze(1) + p.unsqueeze(1)*(eigvals))/(term11.unsqueeze(1) + x.unsqueeze(1)*(eigvals)),
+        torch.ones_like(eigvals)], dim=1)
+    
+    #eigvec1, eigvec2, eigvec3 = (
+    #    eigvec1 / torch.linalg.norm(eigvec1, dim=1).unsqueeze(1),
+    #    eigvec2 / torch.linalg.norm(eigvec2, dim=1).unsqueeze(1),
+    #    eigvec3 / torch.linalg.norm(eigvec3, dim=1).unsqueeze(1))
+    #eigvecs = torch.cat([eigvec1, eigvec2, eigvec3], dim=2)
+
+    # manual fuse
+    eigvecs = eigvecs / torch.linalg.norm(eigvecs, dim=1, keepdim=True)
 
     return eigvals.reshape(shape[:-1]), eigvecs.reshape(shape)
