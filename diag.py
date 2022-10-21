@@ -10,13 +10,10 @@ def _np_diagonalize(U):
     P = torch.from_numpy(P).to(device=U.device, dtype=U.dtype)
     return d, P
 
-
 def _torch_diagonalize(U):
     d, P = torch.linalg.eig(U)
     return d, P
 
-
-@torch.jit.script
 def _torch_diagonalize_su3(U):
     """Pytorch implementation of analytic solution of SU(3) diagonalization"""
     shape = U.shape

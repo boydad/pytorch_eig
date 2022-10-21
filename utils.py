@@ -19,3 +19,12 @@ def get_rand_SU3(batch_size, device="cuda"):
     )
     U = U * centers[..., np.newaxis, np.newaxis]
     return U
+
+
+def nvtx_decorator(f, name):
+    def decorated(*args, **kwars):
+        torch.cuda.nvtx.range_push(name)
+        tmp = f(*args, **kwars)
+        torch.cuda.nvtx.range_pop()
+        return tmp
+    return decorated
